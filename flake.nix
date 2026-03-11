@@ -54,28 +54,33 @@
 
           # https://flake.parts/options/git-hooks-nix.html
           # Example: https://github.com/cachix/git-hooks.nix/blob/master/template/flake.nix
+          pre-commit.settings.package = pkgs.prek;
           pre-commit.settings.configPath = ".pre-commit-config.flake.yaml";
+          pre-commit.settings.excludes = [ "^(.*[.]png)$" ];
           pre-commit.settings.hooks = {
-            commitizen.enable = true;
             eclint.enable = true;
             treefmt.enable = true;
           };
 
-          devShells.default = pkgs.mkShell {
+          devShells.default = pkgs.mkShellNoCC {
+            strictDeps = true;
+            __structuralAttrs = true;
+
             inputsFrom = [
               config.treefmt.build.devShell
               config.pre-commit.devShell
             ];
 
-            shellHook = ''
-              echo 1>&2 "Welcome to the development shell!"
-            '';
-
-            packages = with pkgs; [
+            nativeBuildInputs = with pkgs; [
               typst
               tinymist
               pandoc
             ];
+
+            shellHook = ''
+              export SOURCE_DATE_EPOCH=$(git log -1 --format=%ct 2>/dev/null || date +%s)
+              echo 1>&2 "Welcome to the development shell!"
+            '';
           };
         };
     };
